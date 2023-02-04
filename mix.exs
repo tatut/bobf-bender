@@ -15,7 +15,10 @@ defmodule Bender.MixProject do
   def application do
     [
       extra_applications: [:logger, :inets],
-      mod: {Bender.Application, []}
+      mod: {Bender.Application, []},
+
+      # Put the server address here
+      env: [server_url: "http://localhost:8080/"]
     ]
   end
 

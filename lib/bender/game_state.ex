@@ -5,7 +5,7 @@ defmodule Bender.GameState do
 
   """
 
- alias Bender.Mapper, as: M
+  alias Bender.{Mapper,Chat}
 
   def from_json(json) do
     Jason.decode!(json)
@@ -31,7 +31,7 @@ defmodule Bender.GameState do
     gs = from_json(body)
 
     # Update map
-    M.map(get_in(gs, ["gameState", "map"]))
+    Mapper.map(get_in(gs, ["gameState", "map"]))
   end
 
   # Get position of thing as {x,y} tuple
@@ -48,7 +48,7 @@ defmodule Bender.GameState do
   end
 
   def play(%{"gameState" => %{"items" => items}=gs, "playerId" => id, "playerState" => me}) do
-    IO.puts("items: #{inspect(gs)}")
+    ##IO.puts("items: #{inspect(gs)}")
     item = hd(items) # Take first item
     item_pos = pos(item)
     my_pos = pos(me)
@@ -59,10 +59,11 @@ defmodule Bender.GameState do
 
     cond do
       item_pos == my_pos ->
+        Chat.say(id, "This is mine!")
         "PICK"
       true ->
         # Not at position, find path
-        {:path, [^my_pos, next_pos | _ ]} = M.path(my_pos, item_pos)
+        {:path, [^my_pos, next_pos | _ ]} = Mapper.path(my_pos, item_pos)
         dir(my_pos, next_pos)
     end
   end
