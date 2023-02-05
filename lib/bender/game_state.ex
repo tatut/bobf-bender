@@ -5,22 +5,14 @@ defmodule Bender.GameState do
 
   """
 
+  use GenServer
   alias Bender.{Mapper,Chat}
 
-  def from_json(json) do
-    Jason.decode!(json)
-  end
+  def init(opts) do
+    name = opts[:name]
+    register_url = opts[:register_url]
+    bot_url = opts[:bot_url]
 
-  def to_json(gs) do
-    Jason.encode!(gs)
-  end
-
-  def from_example() do
-    {:ok, str} = :file.read_file("example.json")
-    from_json(str)
-  end
-
-  def register(name, register_url, bot_url) do
     {:ok, {_status, _headers, body}} = :httpc.request(:post, # Method
       {register_url, # URL
        [], # Headers
@@ -28,10 +20,13 @@ defmodule Bender.GameState do
        Jason.encode!(%{playerName: name, url: bot_url})}, # Body contents
       [], [sync: true]) # Http and other options
 
-    gs = from_json(body)
+    gs = Jason.decode!(body)
 
     # Update map
     Mapper.map(get_in(gs, ["gameState", "map"]))
+
+    # Start this with player state and timeout of 5s
+    {:ok, gs["player"], 5000}
   end
 
   # Get position of thing as {x,y} tuple
@@ -47,12 +42,12 @@ defmodule Bender.GameState do
     end
   end
 
-  def play(%{"gameState" => %{"items" => items}=gs, "playerId" => id, "playerState" => me}) do
+  defp play(_state, %{"gameState" => %{"items" => items}=gs, "playerId" => id, "playerState" => me}) do
     ##IO.puts("items: #{inspect(gs)}")
     item = hd(items) # Take first item
     item_pos = pos(item)
     my_pos = pos(me)
-
+    map_name = get_in(gs, ["map", "name"])
     ## Starting point, stupidly go to 1st item and try to get it.
     ## should take into account what is the best item to get you can afford
     ## if no items you can afford, go to exit
@@ -60,11 +55,17 @@ defmodule Bender.GameState do
     cond do
       item_pos == my_pos ->
         Chat.say(id, "This is mine!")
-        "PICK"
+        {me, "PICK"}
       true ->
         # Not at position, find path
-        {:path, [^my_pos, next_pos | _ ]} = Mapper.path(my_pos, item_pos)
-        dir(my_pos, next_pos)
+        {:path, [^my_pos, next_pos | _ ]} = Mapper.path(map_name, my_pos, item_pos)
+        {me, dir(my_pos, next_pos)}
     end
   end
+
+  def handle_call({:play, new_game_state}, _from, state) do
+    {new_state, action} = play(state, new_game_state)
+    {:reply, action, new_state}
+  end
+
 end

@@ -17,6 +17,6 @@ defmodule Bender do
     register_url = opts[:register_url] || "http://localhost:8080/register"
     bot_url = opts[:bot_url] || "http://localhost:4000/"
 
-    Bender.GameState.register(name, register_url, bot_url)
+    Bender.Registry.register([name: name , register_url: register_url, bot_url: bot_url])
   end
 end

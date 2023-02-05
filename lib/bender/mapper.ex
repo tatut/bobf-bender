@@ -57,24 +57,27 @@ defmodule Bender.Mapper do
     end
   end
 
-  def handle_call({:map, map_json}, _from, %{map: map}=state) do
-    # Close old ETS table, if any
-    if map != nil do
-      :digraph.delete(map)
+  def handle_call({:map, map_json}, _from, state) do
+    name = map_json["name"]
+
+    # Generate new map if one does not exist yet
+    cond do
+      Map.has_key?(state, name) ->
+        {:reply, :already_mapped, state}
+      true ->
+        new_map = generate_map_digraph(map_json)
+        {:reply, :updated, Map.put(state, name, new_map)}
     end
-
-    new_map = generate_map_digraph(map_json)
-
-    {:reply, :updated, %{ state | map: new_map}}
   end
 
-  def handle_call({:path, from, to}, _from, %{map: map}=state) do
+  def handle_call({:path, name, from, to}, _from, state) do
+    map = state[name]
     path = calculate_path(map, from, to)
     {:reply, path, state}
   end
 
-  def handle_call(:debug, _from, %{map: map}=state) do
-    IO.puts("Vertices: #{inspect(:digraph.vertices(map))}")
+  def handle_call(:debug, _from, state) do
+    IO.puts("Maps: #{inspect(state)}")
     {:reply, :ok, state}
   end
 
@@ -82,16 +85,16 @@ defmodule Bender.Mapper do
     map(:bender_mapper, map_json)
   end
 
-  def path(from, to) do
-    path(:bender_mapper, from, to)
+  def path(name, from, to) do
+    path(:bender_mapper, name, from, to)
   end
 
   def map(mapper, map_json) do
     GenServer.call(mapper, {:map, map_json})
   end
 
-  def path(mapper, from, to) do
-    GenServer.call(mapper, {:path, from, to})
+  def path(mapper, name, from, to) do
+    GenServer.call(mapper, {:path, name, from, to})
   end
 
 end

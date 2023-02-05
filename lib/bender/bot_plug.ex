@@ -1,7 +1,7 @@
 defmodule Bender.BotPlug do
   import Plug.Conn
 
-  alias Bender.GameState, as: GS
+  alias Bender.Registry, as: Reg
 
    def init(options) do
     # initialize options
@@ -12,10 +12,14 @@ defmodule Bender.BotPlug do
      {:ok, body, conn} = read_body(conn, read_timeout: 1000)
 
      # Read game state from POSTed JSON
-     gs = GS.from_json(body)
+     gs = Jason.decode!(body)
+
+     # Get the bot by name
+     name = get_in(gs, ["playerState", "name"])
+     bot = Reg.get(name)
 
      # Decide next action
-     action = GS.play(gs)
+     action = GenServer.call(bot, {:play, gs})
 
      conn
      |> put_resp_content_type("application/json")
