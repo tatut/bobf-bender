@@ -1,32 +1,39 @@
 defmodule Bender.GameState do
   @moduledoc """
+
+  Polls new game state from server.
+  Notifies all registered listeners of new state.
+
   Utilities for manipulating the game state.
   The server sends game state as JSON document.
 
   """
 
   use GenServer
-  alias Bender.{Mapper,Chat}
+  alias Bender.{Mapper,Chat,Api}
+
+  def start_link(opts) do
+    GenServer.start_link(__MODULE__, opts)
+  end
+
+  defp poll(), do: :timer.send_after(333, :poll)
 
   def init(opts) do
-    name = opts[:name]
-    register_url = opts[:register_url]
-    bot_url = opts[:bot_url]
+    poll()
+    {:ok, %{bots: [], game_state: nil}}
+  end
 
-    {:ok, {_status, _headers, body}} = :httpc.request(:post, # Method
-      {register_url, # URL
-       [], # Headers
-       String.to_charlist("application/json"), # Content type to POST (must be an erlang list, not a binary)
-       Jason.encode!(%{playerName: name, url: bot_url})}, # Body contents
-      [], [sync: true]) # Http and other options
-
-    gs = Jason.decode!(body)
-
-    # Update map
-    Mapper.map(get_in(gs, ["gameState", "map"]))
-
-    # Start this with player state and timeout of 5s
-    {:ok, gs["player"], 5000}
+  def handle_info(:poll, %{bots: bots, game_state: old_gs}=state) do
+    new_gs = Api.gamestate()
+    old_round = get_in(old_gs, ["round"])
+    new_round = get_in(new_gs, ["round"])
+    if old_round != new_round do
+      # Send message to all bots to play this round
+      Enum.each(bots, &GenServer.cast(&1, {:play, new_gs}))
+      IO.puts("NEW ROUND! #{new_round}")
+    end
+    poll()
+    {:noreply, %{state | game_state: new_gs}}
   end
 
   # Get position of thing as {x,y} tuple

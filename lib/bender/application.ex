@@ -11,6 +11,7 @@ defmodule Bender.Application do
     children = [
       # Starts a worker by calling: Bender.Worker.start_link(arg)
       Bender.Mapper,
+      Bender.GameState,
       {Bender.Chat, [url]},
       {Bender.Registry, [url]},
       {Bandit, plug: Bender.BotPlug, scheme: :http, options: [port: 4000]}

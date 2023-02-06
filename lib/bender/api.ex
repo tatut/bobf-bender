@@ -7,11 +7,11 @@ defmodule Bender.Api do
   defp parse_response({:ok, {_status, _headers, body}}), do: Jason.decode!(body)
 
   # POST a payload to the given path on the server JSON and return parsed JSON response
-  defp post(path, payload) do
+  defp call(method, path, payload) do
     parse_response(
-      :httpc.request(:post, {"#{url()}/#{path}", [],
-                             'application/json',
-                             Jason.encode!(payload)},
+      :httpc.request(:method, {"#{url()}/#{path}", [],
+                               'application/json',
+                               Jason.encode!(payload)},
         [], [sync: true]))
   end
 
@@ -21,10 +21,14 @@ defmodule Bender.Api do
   end
 
   def register(name) do
-    post("register", %{playerName: name})
+    call(:post, "register", %{playerName: name})
   end
 
   def gamestate() do
     get("gamestate")
+  end
+
+  def move(player_id, move) do
+    call(:put, player_id <> "/move", move)
   end
 end
