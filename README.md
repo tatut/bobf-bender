@@ -1,21 +1,9 @@
 # Bender
 
-**TODO: Add description**
+An Elixir bot for [Bots of Black Friday](https://github.com/janneri/bots-of-black-friday).
 
-## Installation
+Running:
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `bender` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:bender, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/bender>.
-
+* Set the bobf server URL in `mix.exs` application environment.
+* Start interactive shell with `iex -S mix`.
+* Start a bot by calling `Bender.go()` see function for options
