@@ -7,8 +7,7 @@ defmodule Bender.Bot do
   def init(opts) do
     name = opts[:name] || "Bender#{round(:rand.normal() * 10_000_000)}"
     %{"id" => id, "map" => map} = Api.register(name)
-    Bender.Mapper.map(map)
-    {:ok, %{id: id, name: name, map: get_in(map, ["name"])}}
+    {:ok, %{id: id, name: name, map: Mapper.map(map)}}
   end
 
   # Get position of thing as {x,y} tuple
@@ -24,7 +23,7 @@ defmodule Bender.Bot do
     end
   end
 
-  defp play(%{"players" => players}=gs, %{id: id, name: name, map: map_name}=state) do
+  defp play(%{"players" => players}=gs, %{name: name}=state) do
     # Find myself by name in the list of players
     case Enum.find(players, fn %{"name" => n} -> n == name end) do
       nil -> :dead
@@ -32,7 +31,7 @@ defmodule Bender.Bot do
     end
   end
 
-  defp play(me, %{"items" => items, "players" => players}=gs, %{id: id, name: name, map: map_name}=state) do
+  defp play(me, %{"items" => items, "players" => players}=gs, %{id: id, name: name, map: map}=state) do
 
     # Take first item
     item = hd(items)
@@ -50,7 +49,7 @@ defmodule Bender.Bot do
         {state, "PICK"}
       true ->
         # Not at position, find path
-        {:path, [^my_pos, next_pos | _ ]} = Mapper.path(map_name, my_pos, item_pos)
+        {:path, [^my_pos, next_pos | _ ]} = Mapper.path(map, my_pos, item_pos)
         {state, dir(my_pos, next_pos)}
     end
   end
