@@ -24,13 +24,19 @@ defmodule Bender.Bot do
     end
   end
 
-  defp play(%{"items" => items, "players" => players}=gs, %{id: id, name: name, map: map_name}=state) do
-
+  defp play(%{"players" => players}=gs, %{id: id, name: name, map: map_name}=state) do
     # Find myself by name in the list of players
-    me = Enum.find(players, fn %{"name" => n} -> n == name end)
+    case Enum.find(players, fn %{"name" => n} -> n == name end) do
+      nil -> :dead
+      me -> play(me, gs, state)
+    end
+  end
+
+  defp play(me, %{"items" => items, "players" => players}=gs, %{id: id, name: name, map: map_name}=state) do
 
     # Take first item
     item = hd(items)
+    IO.puts("ME: #{inspect(me)}, ITEM: #{inspect(item)}")
     item_pos = pos(item)
     my_pos = pos(me)
 
@@ -49,9 +55,16 @@ defmodule Bender.Bot do
     end
   end
 
-  def handle_cast({:gamestate, gamestate}, %{id: id}=state) do
-    {new_state, move} = play(gamestate, state)
-    Api.move(id, move)
-    {:noreply, new_state}
+  def handle_cast({:gamestate, gamestate}, %{id: id, name: name}=state) do
+    case play(gamestate, state) do
+      :dead -> {:stop, :dead, %{name: name}}
+      {new_state, move} ->
+        Api.move(id, move)
+        {:noreply, new_state}
+    end
+  end
+
+  def terminate(reason, %{name: name}) do
+    IO.puts("#{name} has died due to #{reason}, good night sweet prince!")
   end
 end

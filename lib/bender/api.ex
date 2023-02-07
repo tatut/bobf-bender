@@ -31,6 +31,7 @@ defmodule Bender.Api do
   end
 
   def move(player_id, move) do
+    IO.puts("player #{player_id} moves #{move}")
     call(:put, player_id <> "/move", move)
   end
 

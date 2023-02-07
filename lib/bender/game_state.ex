@@ -16,7 +16,7 @@ defmodule Bender.GameState do
     GenServer.start_link(__MODULE__, opts, name: :bender_gamestate)
   end
 
-  defp poll(), do: :timer.send_after(333, :poll)
+  defp poll(), do: :timer.send_after(100, :poll)
 
   def init(opts) do
     poll()
@@ -36,7 +36,8 @@ defmodule Bender.GameState do
     {:noreply, %{state | game_state: new_gs}}
   end
 
-  def handle_cast({:listen, pid}, %{listeners: l}=state) do
+  def handle_cast({:listen, pid}, %{listeners: l, game_state: gs}=state) do
     {:noreply, %{state | listeners: [pid | l]}}
   end
+
 end
