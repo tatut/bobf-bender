@@ -1,5 +1,4 @@
 defmodule Bender.Chat do
-
   use GenServer
 
   def start_link(url) do
@@ -10,7 +9,7 @@ defmodule Bender.Chat do
     {:ok, %{url: url}}
   end
 
-  def handle_cast(%{player: id, msg: msg}, %{url: url}=state) do
+  def handle_cast(%{player: id, msg: msg}, %{url: url} = state) do
     :httpc.request(:post, {"#{url}/#{id}/say", [], 'text/plain', msg}, [], [])
     {:noreply, state}
   end
@@ -18,5 +17,4 @@ defmodule Bender.Chat do
   def say(id, msg) do
     GenServer.cast(:bender_chat, %{player: id, msg: msg})
   end
-
 end
