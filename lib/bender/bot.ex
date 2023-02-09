@@ -1,13 +1,15 @@
 defmodule Bender.Bot do
+  @moduledoc """
+  Bot is a process that receives new gamestate and plays a round.
+  """
+  alias Bender.{Mapper,Api}
 
-  alias Bender.{Chat,Mapper,Api}
-
-  use GenServer
-
-  def init(opts) do
+  def start(opts) do
     name = opts[:name] || "Bender#{round(:rand.normal() * 10_000_000)}"
     %{"id" => id, "map" => map} = Api.register(name)
-    {:ok, %{id: id, name: name, map: Mapper.map(map)}}
+    state = %{id: id, name: name, map: Mapper.map(map)}
+    pid = spawn(__MODULE__, :loop, [state])
+    {:ok, pid}
   end
 
   # Get position of thing as {x,y} tuple
@@ -20,6 +22,22 @@ defmodule Bender.Bot do
       x2 < x1 -> "LEFT"
       y1 < y2 -> "DOWN"
       y2 < y1 -> "UP"
+    end
+  end
+
+  def loop(%{name: name, id: id}=state) do
+    receive do
+      {:gamestate, gs} ->
+        case play(gs, state) do
+          :dead ->
+            IO.puts("#{name} has died, good night sweet prince!")
+
+            {new_state, move} ->
+            Api.move(id, move)
+            loop(new_state)
+        end
+    after
+      5000 -> IO.puts("No gamestate received in 5s, shutting down #{name} (id: #{id})")
     end
   end
 
@@ -52,18 +70,5 @@ defmodule Bender.Bot do
         {:path, [^my_pos, next_pos | _ ]} = Mapper.path(map, my_pos, item_pos)
         {state, dir(my_pos, next_pos)}
     end
-  end
-
-  def handle_cast({:gamestate, gamestate}, %{id: id, name: name}=state) do
-    case play(gamestate, state) do
-      :dead -> {:stop, :dead, %{name: name}}
-      {new_state, move} ->
-        Api.move(id, move)
-        {:noreply, new_state}
-    end
-  end
-
-  def terminate(reason, %{name: name}) do
-    IO.puts("#{name} has died due to #{reason}, good night sweet prince!")
   end
 end

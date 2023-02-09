@@ -29,7 +29,7 @@ defmodule Bender.GameState do
     new_round = get_in(new_gs, ["round"])
     if old_round != new_round do
       # Send message to all bots to play this round
-      Enum.each(listeners, &GenServer.cast(&1, {:gamestate, new_gs}))
+      Enum.each(listeners, &send(&1, {:gamestate, new_gs}))
       #IO.puts("NEW ROUND! #{new_round}")
     end
     poll()

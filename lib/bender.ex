@@ -13,7 +13,7 @@ defmodule Bender do
 
   """
   def go(opts \\ []) do
-    {:ok, pid} = GenServer.start(Bender.Bot, opts)
+    {:ok, pid} = Bender.Bot.start(opts)
     GenServer.cast(:bender_gamestate, {:listen, pid})
   end
 end
