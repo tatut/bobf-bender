@@ -16,7 +16,7 @@ defmodule Bender.GameState do
     GenServer.start_link(__MODULE__, opts, name: :bender_gamestate)
   end
 
-  defp poll(), do: :timer.send_after(100, :poll)
+  defp poll(), do: :timer.send_after(333, :poll)
 
   def init(opts) do
     poll()
